@@ -4,6 +4,11 @@ from functools import partial, wraps
 from .settings import DEFAULT_REALM
 from .utils import BACKEND
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def rate_limit(func=None, realm=None):
     '''Apply rate limiting directly to any view-like function.'''
     if realm is None:
@@ -16,6 +21,8 @@ def rate_limit(func=None, realm=None):
     def _inner(request, *args, **kwargs):
         source = BACKEND.source_for_request(request)
         if BACKEND.check_realm(source, realm):
+            logger.error("Rate limit exceeded for function {} in realm {} by source {}".format(
+                func.__name__, realm, source))
             return BACKEND.make_limit_response(realm)
         return func(request, *args, **kwargs)
 
@@ -30,6 +37,8 @@ def rate_limit_method(func=None, realm=None):
     def _inner(self, request, *args, **kwargs):
         source = BACKEND.source_for_request(request)
         if BACKEND.check_realm(source, realm):
+            logger.error("Rate limit exceeded for function {} in realm {} by source {}".format(
+                func.__name__, realm, source))
             return BACKEND.make_limit_response(realm)
         return func(self, request, *args, **kwargs)
 
